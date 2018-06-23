@@ -23,3 +23,4 @@ cleanAll:
 	rm -f *.o
 	rm -f client
 	rm -f barber
+	rm -f lib_common.a
