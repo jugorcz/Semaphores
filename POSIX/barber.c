@@ -35,15 +35,12 @@ int getChairsNumber(int argc, char** argv)
 	return chairs;
 }
 
-
-
 void closeSemaphores()
 {
 	closeSemaphore(barber_semaphore);
 	closeSemaphore(chair_semaphore);
 	closeSemaphore(client_semaphore);
 }
-
 
 void createSharedMemory()
 {
@@ -72,7 +69,19 @@ void createSharedMemory()
 		closeSemaphores();
 		exit(1);
 	}
+}
 
+bool inviteClient()
+{
+	if(tryDecreaseSemaphore(client_semaphore) == -1)
+		return false;
+
+	clients_queue -> barber_current_client = leaveASeat(clients_queue);
+	if(clients_queue -> barber_current_client == -1)
+		return false;
+
+	printf("Barber invites client %d.\n",clients_queue -> barber_current_client);
+	return true;
 }
 
 void finishBarberWork()
@@ -83,8 +92,6 @@ void finishBarberWork()
 	shm_unlink(shared_memory_name);
 	exit(0);
 }
-
-
 
 int main(int argc, char** argv)
 {
@@ -103,13 +110,41 @@ int main(int argc, char** argv)
 
 	while(1)
 	{
+		if(clients_queue -> barber_is_sleeping == false)
+		{
+			if(tryDecreaseSemaphore(barber_semaphore) == -1)
+				continue;
 
+			printf("Barber wakes up.\n");
+			inviteClient();
+			pid_t client_pid = clients_queue -> barber_current_client;
+			printf("Barber cuts %d.\n", client_pid);
+			sleep(5);
+			printf("Barber finisches with %d.\n",client_pid);
+			kill(client_pid, SIGRTMIN);
+
+			while(1)
+			{
+				if(inviteClient())
+				{
+					client_pid = clients_queue -> barber_current_client;
+					printf("Barber cuts %d.\n", client_pid);
+					sleep(5);
+					printf("Barber finisches with %d.\n",client_pid);
+					kill(client_pid, SIGRTMIN);
+					
+				} else
+				{
+					printf("Barber go to sleep.\n");
+					clients_queue -> barber_is_sleeping = true;
+					increaseSemaphore(barber_semaphore);
+					break;
+
+				}
+			}
+		}
 	}
 
 	finishBarberWork();
-
-
-	//clients_queue = (queue*)shared_memory_ptr;
-	//initializeQueue(clients_queue);
 	return 0;
 }

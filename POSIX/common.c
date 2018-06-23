@@ -22,6 +22,20 @@ sem_t* openSemaphore(char* name)
 	return semaphore;
 }
 
+int tryDecreaseSemaphore(sem_t* semaphore)
+{
+	return sem_trywait(semaphore);	
+}
+
+int increaseSemaphore(sem_t* semaphore)
+{
+	return sem_post(semaphore);
+}
+
+int decreaseSemaphore(sem_t* semaphore)
+{
+	return sem_wait(semaphore);
+}
 
 void closeSemaphore(sem_t* semaphore)
 {
@@ -31,7 +45,6 @@ void closeSemaphore(sem_t* semaphore)
 		printf("Warning: cannot close semaphore.\n");
 	}
 }
-
 
 void initializeQueue(queue* queue)
 {
@@ -44,7 +57,6 @@ void initializeQueue(queue* queue)
 		queue -> chairs[i] = -1;
 	}
 }
-
 
 void displayQueue(queue* queue)
 {
@@ -63,4 +75,40 @@ void displayQueue(queue* queue)
 	} while (current_index != end_index);
 			
 	printf("\n");
+}
+
+bool takeASeat(pid_t pid, queue* queue)
+{
+	int index = queue -> next_free_chair;
+	bool result;
+	if(queue -> chairs[index] != -1)
+	{
+		printf("There is no free chair.\n");
+		result = false;
+	}
+	else
+	{
+		queue -> chairs[index] = pid;
+		index = (index + 1) % QUEUE_SIZE;
+		queue -> next_free_chair = index;
+		result = true;
+	}
+	return result;
+}
+
+pid_t leaveASeat(queue* queue)
+{
+	int index = queue -> the_longest_waiting_client;
+	pid_t client = queue -> chairs[index];
+	if(client == -1)
+	{
+		printf("There is no waiting client.\n");
+	}
+	else
+	{
+		queue -> chairs[index] = -1;
+		index = (index + 1) % QUEUE_SIZE;
+		queue -> the_longest_waiting_client = index;
+	}
+	return client;
 }

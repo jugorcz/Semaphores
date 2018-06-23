@@ -30,3 +30,9 @@ void closeSemaphore(sem_t* semaphore);
 
 void initializeQueue(queue* queue);
 void displayQueue(queue* queue);
+bool takeASeat(pid_t pid, queue* queue);
+pid_t leaveASeat(queue* queue);
+
+int tryDecreaseSemaphore(sem_t* semaphore);
+int increaseSemaphore(sem_t* semaphore);
+int decreaseSemaphore(sem_t* semaphore);
